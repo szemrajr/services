@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  employee:
+    build: EmployeeService/
+    image: szemrajr/spring-boot-employee.jar
+    ports:
+      - 8080:8080
+    deploy:
+      mode: replicated
+      replicas: 2
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+    networks:
+      - employeeapp
+    depends_on:
+      - mysql
+
+  error:
+    build: ErrorService/
+    image: szemrajr/spring-boot-error.jar
+    ports:
+      - 8081:8081
+    volumes:
+      - error-data:/home/logs/
+    networks:
+      - employeeapp
+
+  mysql:
+    image: mysql:5.7
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: services
+      MYSQL_USER: db_user
+      MYSQL_PASSWORD: password
+    networks:
+      - employeeapp
+
+  redis:
+    image: 'bitnami/redis:latest'
+    environment:
+      - ALLOW_EMPTY_PASSWORD=yes
+    networks:
+      - employeeapp
+
+networks:
+  employeeapp:
+
+volumes:
+  error-data:
