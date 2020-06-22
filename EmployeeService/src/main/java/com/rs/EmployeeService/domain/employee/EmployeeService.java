@@ -31,24 +31,47 @@ public class EmployeeService {
 
     private void validate(Employee employee) {
         String PESEL = employee.getPESEL();
-        Employee employeeFromDB = employeeRepository.findByPESEL(PESEL);
-        if (employeeFromDB != null && employee.getId() != null) {
-            ifEmployeeWithGivenPESELCanUpdate(employeeFromDB, employee);
-        } else if (employeeFromDB != null) {
+        Employee employeeWithPESELFromDB = employeeRepository.findByPESEL(PESEL);
+        if (employeeWithPESELFromDB != null) {
             throw new EmployeeWithSamePESELExistsException(String.format(PESEL_EXISTS_MESSAGE, PESEL));
         }
 
         if (employee.getRole().equals(Role.DIRECTOR)) {
-            Long directorOccurNumber = employeeRepository.countByRole(Role.DIRECTOR);
-            if (directorOccurNumber >= DIRECTOR_LIMIT) {
-                throw new DirectorLimitExceededException(DIRECTOR_LIMIT_MESSAGE);
+            checkDirectorLimit();
+        }
+    }
+
+    @Transactional
+    public Employee update(Employee employee, Long id){
+        validateUpdate(employee, id);
+        return employeeRepository.save(employee);
+    }
+
+    private void validateUpdate(Employee employee, Long id) {
+        String PESEL = employee.getPESEL();
+        Employee employeeWithPESELFromDB = employeeRepository.findByPESEL(PESEL);
+        if (employeeWithPESELFromDB != null) {
+            ifEmployeeWithGivenPESELCanUpdate(employeeWithPESELFromDB, id);
+        }
+
+        Employee employeeFromDB = get(id);
+        if(!employeeFromDB.getRole().equals(employee.getRole())){
+            if (employee.getRole().equals(Role.DIRECTOR)) {
+                checkDirectorLimit();
             }
         }
     }
 
-    private void ifEmployeeWithGivenPESELCanUpdate(Employee userFromDB, Employee userToUpdate) {
-        if (!userFromDB.getId().equals(userToUpdate.getId())) {
-            throw new EmployeeWithSamePESELExistsException(String.format(PESEL_EXISTS_MESSAGE, userToUpdate.getPESEL()));
+    private void ifEmployeeWithGivenPESELCanUpdate(Employee userFromDB, Long userId) {
+        if (!userFromDB.getId().equals(userId)) {
+            throw new EmployeeWithSamePESELExistsException(String.format(PESEL_EXISTS_MESSAGE, userFromDB.getPESEL()));
+        }
+    }
+
+    private void checkDirectorLimit(){
+        Long directorOccurNumber = employeeRepository.countByRole(Role.DIRECTOR);
+        if (directorOccurNumber >= DIRECTOR_LIMIT) {
+            throw new DirectorLimitExceededException(DIRECTOR_LIMIT_MESSAGE);
         }
     }
 
@@ -71,7 +94,7 @@ public class EmployeeService {
         }
         Employee employee = get(employeeId);
         employee.setSuperior(superior);
-        return save(employee);
+        return update(employee, employeeId);
     }
 
     private void checkManagerSubordinatesLimit(Long superiorId) {

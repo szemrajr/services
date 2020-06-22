@@ -7,11 +7,9 @@ import javax.persistence.Id;
 import javax.validation.constraints.NotEmpty;
 
 @Entity
-
 public class Address {
 
     Address(){
-
     }
 
     @Id

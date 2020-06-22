@@ -33,18 +33,17 @@ public class EmployeeCtrl {
         return employeeService.save(employee);
     }
 
-    @PutMapping("/employees")
-    public Employee update(@Valid @RequestBody Employee employee){
-        return employeeService.save(employee);
+    @PutMapping("/employees/{id}")
+    public Employee update(@Valid @PathVariable Long id, @RequestBody Employee employee){
+        return employeeService.update(employee, id);
     }
-
     @GetMapping("/employees/{id}")
     public Employee get(@PathVariable Long id){
         return employeeService.get(id);
     }
 
     @PostMapping("/employees/{id}/superior")
-    public Employee setSuperior(@PathVariable Long id, @RequestBody SuperiorId superiorId){
+    public Employee setSuperior(@Valid @PathVariable Long id, @RequestBody SuperiorId superiorId){
         return employeeService.setSuperior(id, superiorId.superior);
     }
 
